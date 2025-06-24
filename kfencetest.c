@@ -148,7 +148,7 @@ static bool test_heap_underflow(FAR struct mm_heap_s *heap, size_t size)
 static bool test_heap_overflow(FAR struct mm_heap_s *heap, size_t size)
 {
   FAR uint8_t *mem = kfence_alloc(heap,size);
-  size = kfence_alloc_size(mem);
+  size = kfence_get_size(mem);
 
   mem[size + 1] = 0x11;
   return false;
@@ -179,7 +179,7 @@ static bool test_heap_illegal_memcpy(FAR struct mm_heap_s *heap, size_t size)
 
   size = size / 2;
   src = kfence_alloc(heap,size);
-  size = kfence_alloc_size(src);
+  size = kfence_get_size(src);
   dst = kfence_alloc(heap,size);
 
   memcpy(dst, src, size);
@@ -189,7 +189,7 @@ static bool test_heap_illegal_memcpy(FAR struct mm_heap_s *heap, size_t size)
 static bool test_heap_illegal_memset(FAR struct mm_heap_s *heap, size_t size)
 {
   FAR uint8_t *mem = kfence_alloc(heap,size);
-  size = kfence_alloc_size(mem);
+  size = kfence_get_size(mem);
 
   memset(mem, 0x11, size + 1); // 越界访问
   return false;
@@ -200,7 +200,7 @@ static bool test_heap_illegal_strcpy(FAR struct mm_heap_s *heap, size_t size)
   FAR char *dst = kfence_alloc(heap,16);
   FAR char *src;
   int i;
-  size = kfence_alloc_size(dst);
+  size = kfence_get_size(dst);
   src = kfence_alloc(heap,size + 16);
 
   for (i = 0; i < size + 16; i++)
@@ -217,7 +217,7 @@ static bool test_heap_legal_memcpy(FAR struct mm_heap_s *heap, size_t size)
   FAR uint8_t *des = kfence_alloc(heap,size / 2);
   FAR uint8_t *src = kfence_alloc(heap,size / 2);
   size_t des_size = kfence_get_size(des);
-  size_t src_size = kfence_alloc_size(src);
+  size_t src_size = kfence_get_size(src);
 
   return memcpy(des, src, des_size > src_size ? src_size : des_size) != NULL;
 }
@@ -225,7 +225,7 @@ static bool test_heap_legal_memcpy(FAR struct mm_heap_s *heap, size_t size)
 static bool test_heap_legal_memset(FAR struct mm_heap_s *heap, size_t size)
 {
   FAR uint8_t *des = kfence_alloc(heap,size / 2);
-  size = kfence_alloc_size(des);
+  size = kfence_get_size(des);
 
   return memset(des, 0xef, size) != NULL;
 }
@@ -235,7 +235,7 @@ static bool test_heap_legal_strcpy(FAR struct mm_heap_s *heap, size_t size)
   FAR char *mem = kfence_alloc(heap,size);
   FAR char *str = "hello world";
 
-  size = kfence_alloc_size(mem);
+  size = kfence_get_size(mem);
   return strcpy(mem, str) != NULL;
 }
 
@@ -267,7 +267,7 @@ static bool test_invalid_realloc_non_kfence(FAR struct mm_heap_s *heap, size_t s
   printf("Running test_invalid_realloc_non_kfence: realloc(%p, %zu)\n",
          invalid_ptr, size);
 
-  void *new_ptr = kfence_realloc(invalid_ptr, size); 
+  void *new_ptr = kfence_realloc(heap, invalid_ptr, size); 
 
   // 如果 realloc 未报错，说明 kfence 没有正确检测
   return (new_ptr == NULL);
@@ -281,7 +281,7 @@ static bool test_invalid_realloc_to_invalid_address(FAR struct mm_heap_s *heap, 
   printf("Running test_invalid_realloc_to_invalid_address: realloc(%p, %zu)\n",
          invalid_ptr, size);
 
-  void *new_ptr = kfence_realloc(mem, size);
+  void *new_ptr = kfence_realloc(heap, mem, size);
 
   // 如果 realloc 未报错，说明 kfence 没有正确检测
   return (new_ptr == NULL);
@@ -296,7 +296,7 @@ static bool test_invalid_realloc_to_freed_address(FAR struct mm_heap_s *heap, si
   printf("Running test_invalid_realloc_to_freed_address: realloc(%p, %zu)\n",
          invalid_ptr, size);
 
-  void *new_ptr = kfence_realloc(invalid_ptr, size);
+  void *new_ptr = kfence_realloc(heap, invalid_ptr, size);
 
   // 如果 realloc 未报错，说明 kfence 没有正确检测
   return (new_ptr == NULL);
@@ -439,7 +439,7 @@ static int run_testcase(int argc, FAR char *argv[])
   clock_gettime(CLOCK_MONOTONIC, &end);
 
   timespec_sub(&result, &end, &start);
-  printf("%s spending %ld.%lds\n", run->testcase->name,
+  printf("%s spending %d.%lds\n", run->testcase->name,
                                    result.tv_sec,
                                    result.tv_nsec);
 
