@@ -20,53 +20,14 @@
 #include "cwe122/cwe122_tests.h"
 
 /****************************************************************************
- * CWE416 测试用例数组
- ****************************************************************************/
-
-typedef int (*cwe416_test_func)(void);
-
-static cwe416_test_func g_cwe416_tests[] = {
-    test_cwe416_malloc_free_char_01, test_cwe416_malloc_free_char_02, test_cwe416_malloc_free_char_03,
-    test_cwe416_malloc_free_char_04, test_cwe416_malloc_free_char_05, test_cwe416_malloc_free_char_06,
-    test_cwe416_malloc_free_char_07, test_cwe416_malloc_free_char_08, test_cwe416_malloc_free_char_09,
-    test_cwe416_malloc_free_char_10, test_cwe416_malloc_free_char_11, test_cwe416_malloc_free_char_12,
-    test_cwe416_malloc_free_char_13, test_cwe416_malloc_free_char_14, test_cwe416_malloc_free_char_15,
-    test_cwe416_malloc_free_char_16, test_cwe416_malloc_free_char_17, test_cwe416_malloc_free_char_18,
-    test_cwe416_malloc_free_struct_01, test_cwe416_malloc_free_struct_02, test_cwe416_malloc_free_struct_03,
-    test_cwe416_malloc_free_struct_04, test_cwe416_malloc_free_struct_05, test_cwe416_malloc_free_struct_06,
-    test_cwe416_malloc_free_struct_07, test_cwe416_malloc_free_struct_08, test_cwe416_malloc_free_struct_09,
-    test_cwe416_malloc_free_struct_10, test_cwe416_malloc_free_struct_11, test_cwe416_malloc_free_struct_12,
-    test_cwe416_malloc_free_struct_13, test_cwe416_malloc_free_struct_14, test_cwe416_malloc_free_struct_15,
-    test_cwe416_malloc_free_struct_16, test_cwe416_malloc_free_struct_17, test_cwe416_malloc_free_struct_18,
-    test_cwe416_malloc_free_long_01, test_cwe416_malloc_free_long_02, test_cwe416_malloc_free_long_03,
-    test_cwe416_malloc_free_long_04, test_cwe416_malloc_free_long_05, test_cwe416_malloc_free_long_06,
-    test_cwe416_malloc_free_long_07, test_cwe416_malloc_free_long_08, test_cwe416_malloc_free_long_09,
-    test_cwe416_malloc_free_long_10, test_cwe416_malloc_free_long_11, test_cwe416_malloc_free_long_12,
-    test_cwe416_malloc_free_long_13, test_cwe416_malloc_free_long_14, test_cwe416_malloc_free_long_15,
-    test_cwe416_malloc_free_long_16, test_cwe416_malloc_free_long_17, test_cwe416_malloc_free_long_18,
-    test_cwe416_malloc_free_int64_t_01, test_cwe416_malloc_free_int64_t_02, test_cwe416_malloc_free_int64_t_03,
-    test_cwe416_malloc_free_int64_t_04, test_cwe416_malloc_free_int64_t_05, test_cwe416_malloc_free_int64_t_06,
-    test_cwe416_malloc_free_int64_t_07, test_cwe416_malloc_free_int64_t_08, test_cwe416_malloc_free_int64_t_09,
-    test_cwe416_malloc_free_int64_t_10, test_cwe416_malloc_free_int64_t_11, test_cwe416_malloc_free_int64_t_12,
-    test_cwe416_malloc_free_int64_t_13, test_cwe416_malloc_free_int64_t_14, test_cwe416_malloc_free_int64_t_15,
-    test_cwe416_malloc_free_int64_t_16, test_cwe416_malloc_free_int64_t_17, test_cwe416_malloc_free_int64_t_18,
-    test_cwe416_return_freed_ptr_01, test_cwe416_return_freed_ptr_02, test_cwe416_return_freed_ptr_03,
-    test_cwe416_return_freed_ptr_04, test_cwe416_return_freed_ptr_05, test_cwe416_return_freed_ptr_06,
-    test_cwe416_return_freed_ptr_07, test_cwe416_return_freed_ptr_08, test_cwe416_return_freed_ptr_09,
-    test_cwe416_return_freed_ptr_10, test_cwe416_return_freed_ptr_11, test_cwe416_return_freed_ptr_12,
-    test_cwe416_return_freed_ptr_13, test_cwe416_return_freed_ptr_14, test_cwe416_return_freed_ptr_15,
-    test_cwe416_return_freed_ptr_16, test_cwe416_return_freed_ptr_17, test_cwe416_return_freed_ptr_18
-};
-
-/****************************************************************************
  * 结构体声明
  ****************************************************************************/
-typedef struct kfencetest_s
+typedef struct testcase_s
 {
-  bool (*func)(FAR struct mm_heap_s *heap, size_t size);  // 测试函数指针
-  bool is_auto;                                           // 是否自动运行
-  FAR const char *name;  
-} kfencetest_t;
+  bool (*func)(FAR struct mm_heap_s *heap, size_t size);
+  bool is_auto;
+  FAR const char *name;
+} testcase_t;
 
 typedef struct run_s
 {
@@ -81,49 +42,49 @@ typedef struct run_s
  * 测试用例声明
  ****************************************************************************/
 //左越界
-static bool test_heap_underflow(size_t size);
+static bool test_heap_underflow(FAR struct mm_heap_s *heap, size_t size);
 //右越界
-static bool test_heap_overflow(size_t size);
+static bool test_heap_overflow(FAR struct mm_heap_s *heap, size_t size);
 //释放后使用
-static bool test_heap_use_after_free(size_t size);
+static bool test_heap_use_after_free(FAR struct mm_heap_s *heap, size_t size);
 //双重释放
-static bool test_heap_double_free(size_t size);
+static bool test_heap_double_free(FAR struct mm_heap_s *heap, size_t size);
 //memcpy目标地址非法或越界
 static bool test_heap_illegal_memcpy(FAR struct mm_heap_s *heap, size_t size);
 //memset目标地址非法或越界
-static bool test_heap_illegal_memset(size_t size);
+static bool test_heap_illegal_memset(FAR struct mm_heap_s *heap, size_t size);
 //strcpy目的缓冲区溢出
-static bool test_heap_illegal_strcpy(size_t size);
+static bool test_heap_illegal_strcpy(FAR struct mm_heap_s *heap, size_t size);
 //释放无效地址
-static bool test_invalid_free_address(size_t size);
+static bool test_invalid_free_address(FAR struct mm_heap_s *heap, size_t size);
 //realloc非kfence内存
-static bool test_invalid_realloc_non_kfence(size_t size);
+static bool test_invalid_realloc_non_kfence(FAR struct mm_heap_s *heap, size_t size);
 //realloc到无效地址
-static bool test_invalid_realloc_to_invalid_address(size_t size);
+static bool test_invalid_realloc_to_invalid_address(FAR struct mm_heap_s *heap, size_t size);
 //realloc到已释放地址
-static bool test_invalid_realloc_to_freed_address(size_t size);
+static bool test_invalid_realloc_to_freed_address(FAR struct mm_heap_s *heap, size_t size);
 
 //对照组——验证不报错
-static bool test_heap_legal_memcpy(size_t size);
-static bool test_heap_legal_memset(size_t size);
-static bool test_heap_legal_strcpy(size_t size);
+static bool test_heap_legal_memcpy(FAR struct mm_heap_s *heap, size_t size);
+static bool test_heap_legal_memset(FAR struct mm_heap_s *heap, size_t size);
+static bool test_heap_legal_strcpy(FAR struct mm_heap_s *heap, size_t size);
 
 /****************************************************************************
  * 朱丽叶测试用例
  ****************************************************************************/
 // CWE416 测试适配函数
-static bool test_cwe416_use_after_free(size_t size);
+static bool test_cwe416_use_after_free(FAR struct mm_heap_s *heap, size_t size);
 
 // CWE415 测试适配函数
-static bool test_cwe415_double_free(size_t size);
+static bool test_cwe415_double_free(FAR struct mm_heap_s *heap, size_t size);
 
 // CWE122 测试适配函数
-static bool test_cwe122_heap_overflow(size_t size);
+static bool test_cwe122_heap_overflow(FAR struct mm_heap_s *heap, size_t size);
 
  /****************************************************************************
  * 测试用例数组
  ****************************************************************************/
-const static kfencetest_t g_kfence_test[] =
+const static testcase_t g_kfence_test[] =
 {
   {test_heap_underflow, true, "heap underflow"},
   {test_heap_overflow, true, "heap overflow"},
@@ -177,25 +138,25 @@ static void timespec_sub(struct timespec *dest,
 /****************************************************************************
  * 各种测试函数
  ****************************************************************************/
-static bool test_heap_underflow(size_t size)
+static bool test_heap_underflow(FAR struct mm_heap_s *heap, size_t size)
 {
-  FAR uint8_t *mem = kfence_alloc(size);
+  FAR uint8_t *mem = kfence_alloc(heap,size);
   *(mem - 1) = 0x12;
   return false;
 }
 
-static bool test_heap_overflow(size_t size)
+static bool test_heap_overflow(FAR struct mm_heap_s *heap, size_t size)
 {
-  FAR uint8_t *mem = kfence_alloc(size);
+  FAR uint8_t *mem = kfence_alloc(heap,size);
   size = kfence_alloc_size(mem);
 
   mem[size + 1] = 0x11;
   return false;
 }
 
-static bool test_heap_use_after_free(size_t size)
+static bool test_heap_use_after_free(FAR struct mm_heap_s *heap, size_t size)
 {
-  FAR uint8_t *mem = kfence_alloc(size);
+  FAR uint8_t *mem = kfence_alloc(heap,size);
 
   kfence_free(mem);
   mem[0] = 0x10;
@@ -203,9 +164,9 @@ static bool test_heap_use_after_free(size_t size)
 }
 
 
-static bool test_heap_double_free(size_t size)
+static bool test_heap_double_free(FAR struct mm_heap_s *heap, size_t size)
 {
-  FAR uint8_t *mem = kfence_alloc(size);
+  FAR uint8_t *mem = kfence_alloc(heap,size);
   kfence_free(mem);
   kfence_free(mem);
   return false;
@@ -217,30 +178,30 @@ static bool test_heap_illegal_memcpy(FAR struct mm_heap_s *heap, size_t size)
   FAR uint8_t *dst;
 
   size = size / 2;
-  src = kfence_alloc(size);
+  src = kfence_alloc(heap,size);
   size = kfence_alloc_size(src);
-  dst = kfence_alloc(size);
+  dst = kfence_alloc(heap,size);
 
   memcpy(dst, src, size);
   memcpy(dst, src, size + 4); // 越界访问
   return false;
 }
-static bool test_heap_illegal_memset(size_t size)
+static bool test_heap_illegal_memset(FAR struct mm_heap_s *heap, size_t size)
 {
-  FAR uint8_t *mem = kfence_alloc(size);
+  FAR uint8_t *mem = kfence_alloc(heap,size);
   size = kfence_alloc_size(mem);
 
   memset(mem, 0x11, size + 1); // 越界访问
   return false;
 }
 
-static bool test_heap_illegal_strcpy(size_t size)
+static bool test_heap_illegal_strcpy(FAR struct mm_heap_s *heap, size_t size)
 {
-  FAR char *dst = kfence_alloc(16);
+  FAR char *dst = kfence_alloc(heap,16);
   FAR char *src;
   int i;
   size = kfence_alloc_size(dst);
-  src = kfence_alloc(size + 16);
+  src = kfence_alloc(heap,size + 16);
 
   for (i = 0; i < size + 16; i++)
     {
@@ -251,36 +212,36 @@ static bool test_heap_illegal_strcpy(size_t size)
   return false;
 }
 
-static bool test_heap_legal_memcpy(size_t size)
+static bool test_heap_legal_memcpy(FAR struct mm_heap_s *heap, size_t size)
 {
-  FAR uint8_t *des = kfence_alloc(size / 2);
-  FAR uint8_t *src = kfence_alloc(size / 2);
+  FAR uint8_t *des = kfence_alloc(heap,size / 2);
+  FAR uint8_t *src = kfence_alloc(heap,size / 2);
   size_t des_size = kfence_get_size(des);
   size_t src_size = kfence_alloc_size(src);
 
   return memcpy(des, src, des_size > src_size ? src_size : des_size) != NULL;
 }
 
-static bool test_heap_legal_memset(size_t size)
+static bool test_heap_legal_memset(FAR struct mm_heap_s *heap, size_t size)
 {
-  FAR uint8_t *des = kfence_alloc(size / 2);
+  FAR uint8_t *des = kfence_alloc(heap,size / 2);
   size = kfence_alloc_size(des);
 
   return memset(des, 0xef, size) != NULL;
 }
 
-static bool test_heap_legal_strcpy(size_t size)
+static bool test_heap_legal_strcpy(FAR struct mm_heap_s *heap, size_t size)
 {
-  FAR char *mem = kfence_alloc(size);
+  FAR char *mem = kfence_alloc(heap,size);
   FAR char *str = "hello world";
 
   size = kfence_alloc_size(mem);
   return strcpy(mem, str) != NULL;
 }
 
-static bool test_invalid_free_address(size_t size)
+static bool test_invalid_free_address(FAR struct mm_heap_s *heap, size_t size)
 {
-  FAR uint8_t *mem = (FAR uint8_t *)kfence_alloc(size);
+  FAR uint8_t *mem = (FAR uint8_t *)kfence_alloc(heap,size);
   if (!mem)
     {
       printf("test_invalid_free_address: alloc failed\n");
@@ -298,7 +259,7 @@ static bool test_invalid_free_address(size_t size)
   return false; 
 }
 
-static bool test_invalid_realloc_non_kfence(size_t size)
+static bool test_invalid_realloc_non_kfence(FAR struct mm_heap_s *heap, size_t size)
 {
   uint8_t dummy; // 栈上的对象，非分配得到
   FAR uint8_t *invalid_ptr = &dummy;
@@ -312,9 +273,9 @@ static bool test_invalid_realloc_non_kfence(size_t size)
   return (new_ptr == NULL);
 }
 
-static bool test_invalid_realloc_to_invalid_address(size_t size)
+static bool test_invalid_realloc_to_invalid_address(FAR struct mm_heap_s *heap, size_t size)
 {
-  FAR uint8_t *mem = kfence_alloc(size);
+  FAR uint8_t *mem = kfence_alloc(heap,size);
   FAR uint8_t *invalid_ptr = (FAR uint8_t *)0x12345678;
 
   printf("Running test_invalid_realloc_to_invalid_address: realloc(%p, %zu)\n",
@@ -326,9 +287,9 @@ static bool test_invalid_realloc_to_invalid_address(size_t size)
   return (new_ptr == NULL);
 }
 
-static bool test_invalid_realloc_to_freed_address(size_t size)
+static bool test_invalid_realloc_to_freed_address(FAR struct mm_heap_s *heap, size_t size)
 {
-  FAR uint8_t *mem = kfence_alloc(size);
+  FAR uint8_t *mem = kfence_alloc(heap, size);
   kfence_free(mem);
   FAR uint8_t *invalid_ptr = mem;
 
@@ -345,8 +306,12 @@ static bool test_invalid_realloc_to_freed_address(size_t size)
 /****************************************************************************
  * CWE416 测试适配函数
  ****************************************************************************/
+typedef int (*cwe416_test_func)(void);
+static cwe416_test_func g_cwe416_tests[] = {
+#include "cwe416/cwe416_test_cases.h"
+};
 
-static bool test_cwe416_use_after_free(size_t size)
+static bool test_cwe416_use_after_free(FAR struct mm_heap_s *heap, size_t size)
 {
   for (int i = 0; i < nitems(g_cwe416_tests); i++)
     {
@@ -358,38 +323,16 @@ static bool test_cwe416_use_after_free(size_t size)
 /****************************************************************************
  * CWE415 测试适配函数
  ****************************************************************************/
+typedef int (*cwe415_test_func)(void);
+static cwe415_test_func g_cwe415_tests[] = {
+#include "cwe415/cwe415_test_cases.h"
+};
 
-static bool test_cwe415_double_free(size_t size)
+static bool test_cwe415_double_free(FAR struct mm_heap_s *heap, size_t size)
 {
-  /* 定义并调用所有 CWE415 测试 */
-  int (*tests[])(void) = {
-    test_CWE415_Double_Free__malloc_free_int_01,
-    test_CWE415_Double_Free__malloc_free_int_02,
-    test_CWE415_Double_Free__malloc_free_int_03,
-    test_CWE415_Double_Free__malloc_free_int_04,
-    test_CWE415_Double_Free__malloc_free_int_05,
-    test_CWE415_Double_Free__malloc_free_int_06,
-    test_CWE415_Double_Free__malloc_free_int_07,
-    test_CWE415_Double_Free__malloc_free_int_08,
-    test_CWE415_Double_Free__malloc_free_int_09,
-    test_CWE415_Double_Free__malloc_free_int_10,
-    test_CWE415_Double_Free__malloc_free_int_11,
-    test_CWE415_Double_Free__malloc_free_int_12,
-    test_CWE415_Double_Free__malloc_free_int_13,
-    test_CWE415_Double_Free__malloc_free_int_14,
-    test_CWE415_Double_Free__malloc_free_int_15,
-    test_CWE415_Double_Free__malloc_free_int_16,
-    test_CWE415_Double_Free__malloc_free_int_17,
-    test_CWE415_Double_Free__malloc_free_int_18,
-    test_CWE415_Double_Free__malloc_free_int64_t_01,
-    test_CWE415_Double_Free__malloc_free_long_01,
-    test_CWE415_Double_Free__malloc_free_struct_01,
-    test_CWE415_Double_Free__malloc_free_wchar_t_01
-  };
-
-  for (int i = 0; i < nitems(tests); i++)
+  for (int i = 0; i < nitems(g_cwe415_tests); i++)
     {
-      tests[i]();
+      g_cwe415_tests[i]();
     }
   return true;
 }
@@ -398,29 +341,26 @@ static bool test_cwe415_double_free(size_t size)
  * CWE122 测试适配函数
  ****************************************************************************/
 
-static bool test_cwe122_heap_overflow(size_t size)
+typedef int (*cwe122_test_func)(void);
+static cwe122_test_func g_cwe122_multi_file_tests[] = {
+    test_CWE122_snprintf_66,
+    test_CWE122_memcpy_66,
+    test_CWE122_loop_66
+};
+static cwe122_test_func g_cwe122_single_file_tests[] = {
+#include "cwe122/cwe122_test_cases.h"
+};
+static bool test_cwe122_heap_overflow(FAR struct mm_heap_s *heap, size_t size)
 {
-  /* First, run the multi-file tests */
   printf("--- Running CWE122 multi-file tests ---\\n");
-  test_CWE122_snprintf_66();
-  test_CWE122_memcpy_66();
-  test_CWE122_loop_66();
+  for (int i = 0; i < nitems(g_cwe122_multi_file_tests); i++)
+    g_cwe122_multi_file_tests[i]();
   printf("--- Multi-file tests complete ---\\n\\n");
 
-  /* Now, run all single-file tests via function pointer array */
   printf("--- Running CWE122 single-file tests ---\\n");
-
-  static int (* const cwe122_single_file_tests[])(void) =
-  {
-#include "cwe122/cwe122_test_cases.h"
-  };
-
-  for (int i = 0; i < sizeof(cwe122_single_file_tests) / sizeof(cwe122_single_file_tests[0]); i++)
-    {
-      cwe122_single_file_tests[i]();
-    }
-
-  printf("--- All %d CWE122 single-file tests complete ---\\n", i);
+  for (int i = 0; i < nitems(g_cwe122_single_file_tests); i++)
+    g_cwe122_single_file_tests[i]();
+  printf("--- All %zu CWE122 single-file tests complete ---\\n", nitems(g_cwe122_single_file_tests));
   return true;
 }
 

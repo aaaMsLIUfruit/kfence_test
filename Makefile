@@ -1,5 +1,5 @@
 ############################################################################
-# apps/testing/mm/kasantest/Makefile
+# apps/testing/mm/kfencetest/Makefile
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -22,7 +22,7 @@
 
 include $(APPDIR)/Make.defs
 
-# KASan validity test
+# Kfence validity test
 
 MAINSRC   = kfencetest.c
 PROGNAME  = kfencetest
