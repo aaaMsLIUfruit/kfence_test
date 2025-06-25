@@ -1,3 +1,4 @@
+#include "std_testcase.h"
 #include <nuttx/mm/kfence.h>
 #include <inttypes.h>
 #include <stdio.h>
