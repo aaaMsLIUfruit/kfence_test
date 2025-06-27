@@ -4,28 +4,41 @@
 #
 
 config TESTING_KFENCE
-	tristate "Kfence validity test"
+	tristate "KFENCE validity test"
 	depends on MM_KFENCE
 	default n
 	---help---
-		Enable the Kfence validity test
+		Enable the KFENCE validity test. This test suite validates the
+		KFENCE (Kernel Electric-Fence) memory error detection functionality
+		by running various memory error test cases including:
+		- CWE122: Heap-based buffer overflow
+		- CWE415: Double free
+		- CWE416: Use after free
+		- Basic memory error tests (overflow, underflow, invalid access)
 
 if TESTING_KFENCE
 
+config TESTING_KFENCE_JULIET_CWE
+	bool "Enable Juliet CWE test cases"
+	default y
+	---help---
+		Enable the Juliet CWE (Common Weakness Enumeration) test cases.
+		These are standardized test cases for common software security
+		vulnerabilities including:
+		- CWE415: Double free vulnerability tests
+		- CWE416: Use after free vulnerability tests
+		- Additional CWE test cases as they are implemented
+
 config TESTING_KFENCE_PRIORITY
-	int "Kfence test priority"
+	int "KFENCE test priority"
 	default 101
+	---help---
+		The priority of the KFENCE test task.
 
 config TESTING_KFENCE_STACKSIZE
-	int "Kfence test stack size"
-	default 8192
-
-config TESTING_KFENCE_PERF_HEAP_SIZE
-	int "Kfence test heap size"
-	default 1024000
-
-config TESTING_KFENCE_PERF_CYCLES
-	int "Kfence test performance cycles"
-	default 4096
+	int "KFENCE test stack size"
+	default 256
+	---help---
+		The stack size allocated for the KFENCE test task.
 
 endif

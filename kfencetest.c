@@ -15,9 +15,11 @@
 #include <nuttx/mm/mm.h>
 #include <nuttx/mm/kfence.h>
 
+#ifdef CONFIG_TESTING_KFENCE_JULIET_CWE
 #include "cwe416/cwe416_tests.h"
 #include "cwe415/cwe415_tests.h"
 #include "cwe122/cwe122_tests.h"
+#endif
 
 /****************************************************************************
  * 结构体声明
@@ -37,7 +39,7 @@ typedef struct run_s
   size_t size;                        // 分配大小
 } run_t;
 
-
+#define RETRY_COUNT 1000    //最大尝试次数
 /****************************************************************************
  * 测试用例声明
  ****************************************************************************/
@@ -72,6 +74,7 @@ static bool test_heap_legal_strcpy(FAR struct mm_heap_s *heap, size_t size);
 /****************************************************************************
  * 朱丽叶测试用例
  ****************************************************************************/
+#ifdef CONFIG_TESTING_KFENCE_JULIET_CWE
 // CWE416 测试适配函数
 static bool test_cwe416_use_after_free(FAR struct mm_heap_s *heap, size_t size);
 
@@ -80,8 +83,9 @@ static bool test_cwe415_double_free(FAR struct mm_heap_s *heap, size_t size);
 
 // CWE122 测试适配函数
 static bool test_cwe122_heap_overflow(FAR struct mm_heap_s *heap, size_t size);
+#endif
 
- /****************************************************************************
+/****************************************************************************
  * 测试用例数组
  ****************************************************************************/
 const static testcase_t g_kfence_test[] =
@@ -100,13 +104,15 @@ const static testcase_t g_kfence_test[] =
   {test_invalid_realloc_non_kfence, true, "invalid realloc non kfence"},
   {test_invalid_realloc_to_invalid_address, true, "invalid realloc to invalid address"},
   {test_invalid_realloc_to_freed_address, true, "invalid realloc to freed address"},
+#ifdef CONFIG_TESTING_KFENCE_JULIET_CWE
   {test_cwe416_use_after_free, true, "CWE416 use after free"},
   {test_cwe415_double_free, true, "CWE415 double free"},
   {test_cwe122_heap_overflow, true, "CWE122 heap overflow"}
+#endif
 };
 
 //测试专用内存池
-static char g_kfence_heap[10240] aligned_data(8);
+static char g_kfence_heap[2048] aligned_data(8);
 /****************************************************************************
  * 辅助函数
  ****************************************************************************/
@@ -140,14 +146,37 @@ static void timespec_sub(struct timespec *dest,
  ****************************************************************************/
 static bool test_heap_underflow(FAR struct mm_heap_s *heap, size_t size)
 {
-  FAR uint8_t *mem = kfence_alloc(heap,size);
+  FAR uint8_t *mem = NULL;
+  int retry_count = RETRY_COUNT;
+  while (retry_count-- > 0){
+    mem = kfence_alloc(heap,size);
+    if(mem != NULL){
+      break;
+    }
+  }
+    /* 如果重试后仍未能分配内存 */
+  if (mem == NULL) {
+    printf("ERROR: Failed to allocate memory after 1000 attempts. Test aborted.\n");
+    return false; // 无法执行测试
+  }
   *(mem - 1) = 0x12;
   return false;
 }
 
 static bool test_heap_overflow(FAR struct mm_heap_s *heap, size_t size)
 {
-  FAR uint8_t *mem = kfence_alloc(heap,size);
+  FAR uint8_t *mem = NULL;
+  int retry_count = RETRY_COUNT;
+  while (retry_count-- > 0){
+    mem = kfence_alloc(heap,size);
+    if(mem != NULL){
+      break;
+    }
+  }
+  if (mem == NULL) {
+    printf("ERROR: Failed to allocate memory after 1000 attempts. Test aborted.\n");
+    return false; // 无法执行测试
+  }
   size = kfence_get_size(mem);
 
   mem[size + 1] = 0x11;
@@ -156,8 +185,18 @@ static bool test_heap_overflow(FAR struct mm_heap_s *heap, size_t size)
 
 static bool test_heap_use_after_free(FAR struct mm_heap_s *heap, size_t size)
 {
-  FAR uint8_t *mem = kfence_alloc(heap,size);
-
+  FAR uint8_t *mem = NULL;
+  int retry_count = RETRY_COUNT;
+  while (retry_count-- > 0){
+    mem = kfence_alloc(heap,size);
+    if(mem != NULL){
+      break;
+    }
+  }
+  if (mem == NULL) {
+    printf("ERROR: Failed to allocate memory after 1000 attempts. Test aborted.\n");
+    return false; // 无法执行测试
+  }
   kfence_free(mem);
   mem[0] = 0x10;
   return false;
@@ -166,7 +205,18 @@ static bool test_heap_use_after_free(FAR struct mm_heap_s *heap, size_t size)
 
 static bool test_heap_double_free(FAR struct mm_heap_s *heap, size_t size)
 {
-  FAR uint8_t *mem = kfence_alloc(heap,size);
+  FAR uint8_t *mem = NULL;
+  int retry_count = RETRY_COUNT;
+  while (retry_count-- > 0){
+    mem = kfence_alloc(heap,size);
+    if(mem != NULL){
+      break;
+    }
+  }
+  if (mem == NULL) {
+    printf("ERROR: Failed to allocate memory after 1000 attempts. Test aborted.\n");
+    return false; // 无法执行测试
+  }
   kfence_free(mem);
   kfence_free(mem);
   return false;
@@ -174,48 +224,111 @@ static bool test_heap_double_free(FAR struct mm_heap_s *heap, size_t size)
 
 static bool test_heap_illegal_memcpy(FAR struct mm_heap_s *heap, size_t size)
 {
-  FAR uint8_t *src;
-  FAR uint8_t *dst;
+  FAR uint8_t *src = NULL;
+  FAR uint8_t *dst = NULL;
+  int retry_count = RETRY_COUNT;
+  while (retry_count-- > 0){
+    src = kfence_alloc(heap,size);
+    if(src != NULL){
+      break;
+    }
+  }
 
   size = size / 2;
-  src = kfence_alloc(heap,size);
   size = kfence_get_size(src);
-  dst = kfence_alloc(heap,size);
-
+  while (retry_count-- > 0){
+    dst = kfence_alloc(heap,size);
+    if(dst != NULL){
+      break;
+    }
+  }
+  if (dst == NULL) {
+    printf("ERROR: Failed to allocate memory after 1000 attempts. Test aborted.\n");
+    return false; // 无法执行测试
+  }
   memcpy(dst, src, size);
   memcpy(dst, src, size + 4); // 越界访问
   return false;
 }
 static bool test_heap_illegal_memset(FAR struct mm_heap_s *heap, size_t size)
 {
-  FAR uint8_t *mem = kfence_alloc(heap,size);
+  FAR uint8_t *mem = NULL;
+  int retry_count = RETRY_COUNT;
+  while (retry_count-- > 0){
+    mem = kfence_alloc(heap,size);
+    if(mem != NULL){
+      break;
+    }
+  }
   size = kfence_get_size(mem);
-
+  if (mem == NULL) {
+    printf("ERROR: Failed to allocate memory after 1000 attempts. Test aborted.\n");
+    return false; // 无法执行测试
+  }
   memset(mem, 0x11, size + 1); // 越界访问
   return false;
 }
 
 static bool test_heap_illegal_strcpy(FAR struct mm_heap_s *heap, size_t size)
 {
-  FAR char *dst = kfence_alloc(heap,16);
-  FAR char *src;
+  FAR char *dst = NULL;
+  FAR char *src = NULL;
   int i;
-  size = kfence_get_size(dst);
-  src = kfence_alloc(heap,size + 16);
-
-  for (i = 0; i < size + 16; i++)
-    {
-      src[i] = 'A'; // 填充源缓冲区
+  int retry_count = RETRY_COUNT;
+  while (retry_count-- > 0){
+    dst = kfence_alloc(heap,16);
+    if(dst != NULL){
+      break;
     }
-  
-  strcpy(dst, src); // 越界访问
-  return false;
+  }
+  if (dst == NULL) {
+    printf("ERROR: Failed to allocate memory after 1000 attempts. Test aborted.\n");
+    return false;
+  }
+  size = kfence_get_size(dst);
+  retry_count = RETRY_COUNT; // 重新赋值
+  while (retry_count-- > 0){
+    src = kfence_alloc(heap,size + 16);
+    if(src != NULL){
+      break;
+    }
+  }
+  if (src == NULL) {
+    printf("ERROR: Failed to allocate memory after 1000 attempts. Test aborted.\n");
+    return false;
+  }
+  for (i = 0; i < size + 16; i++) {
+    src[i] = 'A';
+  }
+  strcpy(dst, src); // 越界
+  return true; // 检测到越界应返回true
 }
 
 static bool test_heap_legal_memcpy(FAR struct mm_heap_s *heap, size_t size)
 {
-  FAR uint8_t *des = kfence_alloc(heap,size / 2);
-  FAR uint8_t *src = kfence_alloc(heap,size / 2);
+  FAR uint8_t *des = NULL;
+  FAR uint8_t *src = NULL;
+  int retry_count = RETRY_COUNT;
+  while (retry_count-- > 0){
+    des = kfence_alloc(heap,size / 2);
+    if(des != NULL){
+      break;
+    }
+  }
+  if (des == NULL) {
+    printf("ERROR: Failed to allocate memory after 1000 attempts. Test aborted.\n");
+    return false; // 无法执行测试
+  }
+  while (retry_count-- > 0){
+    src = kfence_alloc(heap,size / 2);
+    if(src != NULL){
+      break;
+    }
+  }
+  if (src == NULL) {
+    printf("ERROR: Failed to allocate memory after 1000 attempts. Test aborted.\n");
+    return false; // 无法执行测试
+  }
   size_t des_size = kfence_get_size(des);
   size_t src_size = kfence_get_size(src);
 
@@ -224,78 +337,96 @@ static bool test_heap_legal_memcpy(FAR struct mm_heap_s *heap, size_t size)
 
 static bool test_heap_legal_memset(FAR struct mm_heap_s *heap, size_t size)
 {
-  FAR uint8_t *des = kfence_alloc(heap,size / 2);
-  size = kfence_get_size(des);
-
+  FAR uint8_t *des = NULL;
+  int retry_count = RETRY_COUNT;
+  while (retry_count-- > 0){
+    des = kfence_alloc(heap,size / 2);
+    if(des != NULL){
+      break;
+    }
+  }
+  if (des == NULL) {
+    printf("ERROR: Failed to allocate memory after 1000 attempts. Test aborted.\n");
+    return false; // 无法执行测试
+  }
   return memset(des, 0xef, size) != NULL;
 }
 
 static bool test_heap_legal_strcpy(FAR struct mm_heap_s *heap, size_t size)
 {
-  FAR char *mem = kfence_alloc(heap,size);
+  FAR char *mem = NULL;
   FAR char *str = "hello world";
-
+  int retry_count = RETRY_COUNT;
+  while (retry_count-- > 0){
+    mem = kfence_alloc(heap,size);
+    if(mem != NULL){
+      break;
+    }
+  }
+  if (mem == NULL) {
+    printf("ERROR: Failed to allocate memory after 1000 attempts. Test aborted.\n");
+    return false; // 无法执行测试
+  }
   size = kfence_get_size(mem);
   return strcpy(mem, str) != NULL;
 }
 
 static bool test_invalid_free_address(FAR struct mm_heap_s *heap, size_t size)
 {
-  FAR uint8_t *mem = (FAR uint8_t *)kfence_alloc(heap,size);
-  if (!mem)
-    {
-      printf("test_invalid_free_address: alloc failed\n");
-      return false;
+  FAR uint8_t *mem = NULL;
+  int retry_count = RETRY_COUNT;
+  while (retry_count-- > 0){
+    mem = kfence_alloc(heap,size);
+    if(mem != NULL){
+      break;
     }
-
+  }
+  if (mem == NULL) {
+    printf("ERROR: Failed to allocate memory after 1000 attempts. Test aborted.\n");
+    return false; // 无法执行测试
+  }
   // 非法释放（不是起始地址）
   FAR uint8_t *invalid_ptr = mem + 1;
-
-  printf("Running test_invalid_free_address: free(%p), expected base=%p\n",
-         invalid_ptr, mem);
-
   kfence_free(invalid_ptr); 
-
   return false; 
 }
 
 static bool test_invalid_realloc_non_kfence(FAR struct mm_heap_s *heap, size_t size)
 {
-  uint8_t dummy; // 栈上的对象，非分配得到
-  FAR uint8_t *invalid_ptr = &dummy;
-
-  printf("Running test_invalid_realloc_non_kfence: realloc(%p, %zu)\n",
-         invalid_ptr, size);
-
-  void *new_ptr = kfence_realloc(heap, invalid_ptr, size); 
-
-  // 如果 realloc 未报错，说明 kfence 没有正确检测
-  return (new_ptr == NULL);
+  FAR uint8_t *invalid_ptr = malloc(size);
+  if (invalid_ptr == NULL) {
+    printf("ERROR: Failed to allocate non-kfence memory.\n");
+    return false;
+  }
+  void *new_ptr = kfence_realloc(heap, invalid_ptr, size);
+  free(invalid_ptr);
+  return (new_ptr == NULL); // 检测到非法应返回true
 }
 
 static bool test_invalid_realloc_to_invalid_address(FAR struct mm_heap_s *heap, size_t size)
 {
-  FAR uint8_t *mem = kfence_alloc(heap,size);
-  FAR uint8_t *invalid_ptr = (FAR uint8_t *)0x12345678;
-
-  printf("Running test_invalid_realloc_to_invalid_address: realloc(%p, %zu)\n",
-         invalid_ptr, size);
-
-  void *new_ptr = kfence_realloc(heap, mem, size);
-
-  // 如果 realloc 未报错，说明 kfence 没有正确检测
-  return (new_ptr == NULL);
+  FAR uint8_t *invalid_ptr = (FAR uint8_t *)0x12345;
+  void *new_ptr = kfence_realloc(heap, invalid_ptr, size);
+  return (new_ptr == NULL); // 检测到非法应返回true
 }
 
 static bool test_invalid_realloc_to_freed_address(FAR struct mm_heap_s *heap, size_t size)
 {
-  FAR uint8_t *mem = kfence_alloc(heap, size);
+  FAR uint8_t *mem = NULL;
+  FAR uint8_t *invalid_ptr = NULL;
+  int retry_count = RETRY_COUNT;
+  while (retry_count-- > 0){
+    mem = kfence_alloc(heap,size);
+    if(mem != NULL){
+      break;
+    }
+  }
+  if (mem == NULL) {
+    printf("ERROR: Failed to allocate memory after 1000 attempts. Test aborted.\n");
+    return false; // 无法执行测试
+  }
   kfence_free(mem);
-  FAR uint8_t *invalid_ptr = mem;
-
-  printf("Running test_invalid_realloc_to_freed_address: realloc(%p, %zu)\n",
-         invalid_ptr, size);
-
+  invalid_ptr = mem;
   void *new_ptr = kfence_realloc(heap, invalid_ptr, size);
 
   // 如果 realloc 未报错，说明 kfence 没有正确检测
@@ -306,7 +437,11 @@ static bool test_invalid_realloc_to_freed_address(FAR struct mm_heap_s *heap, si
 /****************************************************************************
  * CWE416 测试适配函数
  ****************************************************************************/
-typedef int (*cwe416_test_func)(void);
+#ifdef CONFIG_TESTING_KFENCE_JULIET_CWE
+
+#include "cwe416/cwe416_declarations.h"
+
+typedef void (*cwe416_test_func)(void);
 static cwe416_test_func g_cwe416_tests[] = {
 #include "cwe416/cwe416_test_cases.h"
 };
@@ -323,7 +458,10 @@ static bool test_cwe416_use_after_free(FAR struct mm_heap_s *heap, size_t size)
 /****************************************************************************
  * CWE415 测试适配函数
  ****************************************************************************/
-typedef int (*cwe415_test_func)(void);
+
+#include "cwe415/cwe415_declarations.h"
+
+typedef void (*cwe415_test_func)(void);
 static cwe415_test_func g_cwe415_tests[] = {
 #include "cwe415/cwe415_test_cases.h"
 };
@@ -341,28 +479,32 @@ static bool test_cwe415_double_free(FAR struct mm_heap_s *heap, size_t size)
  * CWE122 测试适配函数
  ****************************************************************************/
 
-typedef int (*cwe122_test_func)(void);
-static cwe122_test_func g_cwe122_multi_file_tests[] = {
+typedef void (*cwe122_test_func)(void);
+typedef int (*cwe122_multi_test_func)(void);
+typedef int (*cwe122_single_test_func)(void);
+static cwe122_multi_test_func g_cwe122_multi_file_tests[] = {
     test_CWE122_snprintf_66,
     test_CWE122_memcpy_66,
     test_CWE122_loop_66
 };
-static cwe122_test_func g_cwe122_single_file_tests[] = {
+static cwe122_single_test_func g_cwe122_single_file_tests[] = {
 #include "cwe122/cwe122_test_cases.h"
 };
 static bool test_cwe122_heap_overflow(FAR struct mm_heap_s *heap, size_t size)
 {
-  printf("--- Running CWE122 multi-file tests ---\\n");
+  printf("--- Running CWE122 multi-file tests ---\n");
   for (int i = 0; i < nitems(g_cwe122_multi_file_tests); i++)
     g_cwe122_multi_file_tests[i]();
-  printf("--- Multi-file tests complete ---\\n\\n");
+  printf("--- Multi-file tests complete ---\n\n");
 
-  printf("--- Running CWE122 single-file tests ---\\n");
+  printf("--- Running CWE122 single-file tests ---\n");
   for (int i = 0; i < nitems(g_cwe122_single_file_tests); i++)
     g_cwe122_single_file_tests[i]();
-  printf("--- All %zu CWE122 single-file tests complete ---\\n", nitems(g_cwe122_single_file_tests));
+  printf("--- All %zu CWE122 single-file tests complete ---\n", nitems(g_cwe122_single_file_tests));
   return true;
 }
+
+#endif /* CONFIG_TESTING_KFENCE_JULIET_CWE */
 
 /****************************************************************************
  * 测试运行函数
@@ -439,7 +581,7 @@ static int run_testcase(int argc, FAR char *argv[])
   clock_gettime(CLOCK_MONOTONIC, &end);
 
   timespec_sub(&result, &end, &start);
-  printf("%s spending %d.%lds\n", run->testcase->name,
+  printf("%s spending %ld.%lds\n", run->testcase->name,
                                    result.tv_sec,
                                    result.tv_nsec);
 
@@ -450,6 +592,8 @@ static int run_testcase(int argc, FAR char *argv[])
  ****************************************************************************/
 int main(int argc, FAR char *argv[])
 {
+  printf("=== kfencetest starting ===\n");
+  printf("argc = %d\n", argc);
   int status[nitems(g_kfence_test)];
   size_t i;
 

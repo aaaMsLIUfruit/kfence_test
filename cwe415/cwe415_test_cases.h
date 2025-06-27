@@ -1,4 +1,5 @@
 // 自动生成，仅包含有实现的测试用例
+// CWE415 Double Free 测试用例函数指针数组
   CWE415_Double_Free__kfence_alloc_kfence_free_char_01_bad,
   CWE415_Double_Free__kfence_alloc_kfence_free_char_02_bad,
   CWE415_Double_Free__kfence_alloc_kfence_free_char_03_bad,
