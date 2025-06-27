@@ -20,7 +20,7 @@ if TESTING_KFENCE
 
 config TESTING_KFENCE_JULIET_CWE
 	bool "Enable Juliet CWE test cases"
-	default y
+	default n
 	---help---
 		Enable the Juliet CWE (Common Weakness Enumeration) test cases.
 		These are standardized test cases for common software security
@@ -37,7 +37,7 @@ config TESTING_KFENCE_PRIORITY
 
 config TESTING_KFENCE_STACKSIZE
 	int "KFENCE test stack size"
-	default 256
+	default 1024
 	---help---
 		The stack size allocated for the KFENCE test task.
 

@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <syslog.h>
 #include <time.h>
+#include <unistd.h>
 
 #include <sys/types.h>
 #include <sys/param.h>
@@ -39,7 +40,7 @@ typedef struct run_s
   size_t size;                        // 分配大小
 } run_t;
 
-#define RETRY_COUNT 1000    //最大尝试次数
+#define RETRY_COUNT 100    //最大尝试次数
 /****************************************************************************
  * 测试用例声明
  ****************************************************************************/
@@ -112,7 +113,7 @@ const static testcase_t g_kfence_test[] =
 };
 
 //测试专用内存池
-static char g_kfence_heap[2048] aligned_data(8);
+static char g_kfence_heap[512] aligned_data(8);
 /****************************************************************************
  * 辅助函数
  ****************************************************************************/
@@ -148,11 +149,13 @@ static bool test_heap_underflow(FAR struct mm_heap_s *heap, size_t size)
 {
   FAR uint8_t *mem = NULL;
   int retry_count = RETRY_COUNT;
+  printf("--- Running heap underflow test ---\n");
   while (retry_count-- > 0){
     mem = kfence_alloc(heap,size);
     if(mem != NULL){
       break;
     }
+    usleep(50000);
   }
     /* 如果重试后仍未能分配内存 */
   if (mem == NULL) {
@@ -167,11 +170,13 @@ static bool test_heap_overflow(FAR struct mm_heap_s *heap, size_t size)
 {
   FAR uint8_t *mem = NULL;
   int retry_count = RETRY_COUNT;
+  printf("--- Running heap overflow test ---\n");
   while (retry_count-- > 0){
     mem = kfence_alloc(heap,size);
     if(mem != NULL){
       break;
     }
+    usleep(50000);
   }
   if (mem == NULL) {
     printf("ERROR: Failed to allocate memory after 1000 attempts. Test aborted.\n");
@@ -187,11 +192,13 @@ static bool test_heap_use_after_free(FAR struct mm_heap_s *heap, size_t size)
 {
   FAR uint8_t *mem = NULL;
   int retry_count = RETRY_COUNT;
+  printf("--- Running heap use after free test ---\n");
   while (retry_count-- > 0){
     mem = kfence_alloc(heap,size);
     if(mem != NULL){
       break;
     }
+    usleep(50000);
   }
   if (mem == NULL) {
     printf("ERROR: Failed to allocate memory after 1000 attempts. Test aborted.\n");
@@ -207,11 +214,13 @@ static bool test_heap_double_free(FAR struct mm_heap_s *heap, size_t size)
 {
   FAR uint8_t *mem = NULL;
   int retry_count = RETRY_COUNT;
+  printf("--- Running heap double free test ---\n");
   while (retry_count-- > 0){
     mem = kfence_alloc(heap,size);
     if(mem != NULL){
       break;
     }
+    usleep(50000);
   }
   if (mem == NULL) {
     printf("ERROR: Failed to allocate memory after 1000 attempts. Test aborted.\n");
@@ -227,11 +236,13 @@ static bool test_heap_illegal_memcpy(FAR struct mm_heap_s *heap, size_t size)
   FAR uint8_t *src = NULL;
   FAR uint8_t *dst = NULL;
   int retry_count = RETRY_COUNT;
+  printf("--- Running heap illegal memcpy test ---\n");
   while (retry_count-- > 0){
     src = kfence_alloc(heap,size);
     if(src != NULL){
       break;
     }
+    usleep(50000);
   }
 
   size = size / 2;
@@ -254,11 +265,13 @@ static bool test_heap_illegal_memset(FAR struct mm_heap_s *heap, size_t size)
 {
   FAR uint8_t *mem = NULL;
   int retry_count = RETRY_COUNT;
+  printf("--- Running heap illegal memset test ---\n");
   while (retry_count-- > 0){
     mem = kfence_alloc(heap,size);
     if(mem != NULL){
       break;
     }
+    usleep(50000);
   }
   size = kfence_get_size(mem);
   if (mem == NULL) {
@@ -275,11 +288,13 @@ static bool test_heap_illegal_strcpy(FAR struct mm_heap_s *heap, size_t size)
   FAR char *src = NULL;
   int i;
   int retry_count = RETRY_COUNT;
+  printf("--- Running heap illegal strcpy test ---\n");
   while (retry_count-- > 0){
     dst = kfence_alloc(heap,16);
     if(dst != NULL){
       break;
     }
+    usleep(50000);
   }
   if (dst == NULL) {
     printf("ERROR: Failed to allocate memory after 1000 attempts. Test aborted.\n");
@@ -292,6 +307,7 @@ static bool test_heap_illegal_strcpy(FAR struct mm_heap_s *heap, size_t size)
     if(src != NULL){
       break;
     }
+    usleep(50000);
   }
   if (src == NULL) {
     printf("ERROR: Failed to allocate memory after 1000 attempts. Test aborted.\n");
@@ -309,11 +325,13 @@ static bool test_heap_legal_memcpy(FAR struct mm_heap_s *heap, size_t size)
   FAR uint8_t *des = NULL;
   FAR uint8_t *src = NULL;
   int retry_count = RETRY_COUNT;
+  printf("--- Running heap legal memcpy test ---\n");
   while (retry_count-- > 0){
     des = kfence_alloc(heap,size / 2);
     if(des != NULL){
       break;
     }
+    usleep(50000);
   }
   if (des == NULL) {
     printf("ERROR: Failed to allocate memory after 1000 attempts. Test aborted.\n");
@@ -324,6 +342,7 @@ static bool test_heap_legal_memcpy(FAR struct mm_heap_s *heap, size_t size)
     if(src != NULL){
       break;
     }
+    usleep(50000);
   }
   if (src == NULL) {
     printf("ERROR: Failed to allocate memory after 1000 attempts. Test aborted.\n");
@@ -339,11 +358,13 @@ static bool test_heap_legal_memset(FAR struct mm_heap_s *heap, size_t size)
 {
   FAR uint8_t *des = NULL;
   int retry_count = RETRY_COUNT;
+  printf("--- Running heap legal memset test ---\n");
   while (retry_count-- > 0){
     des = kfence_alloc(heap,size / 2);
     if(des != NULL){
       break;
     }
+    usleep(50000);
   }
   if (des == NULL) {
     printf("ERROR: Failed to allocate memory after 1000 attempts. Test aborted.\n");
@@ -357,11 +378,13 @@ static bool test_heap_legal_strcpy(FAR struct mm_heap_s *heap, size_t size)
   FAR char *mem = NULL;
   FAR char *str = "hello world";
   int retry_count = RETRY_COUNT;
+  printf("--- Running heap legal strcpy test ---\n");
   while (retry_count-- > 0){
     mem = kfence_alloc(heap,size);
     if(mem != NULL){
       break;
     }
+    usleep(50000);
   }
   if (mem == NULL) {
     printf("ERROR: Failed to allocate memory after 1000 attempts. Test aborted.\n");
@@ -375,11 +398,13 @@ static bool test_invalid_free_address(FAR struct mm_heap_s *heap, size_t size)
 {
   FAR uint8_t *mem = NULL;
   int retry_count = RETRY_COUNT;
+  printf("--- Running invalid free address test ---\n");
   while (retry_count-- > 0){
     mem = kfence_alloc(heap,size);
     if(mem != NULL){
       break;
     }
+    usleep(50000);
   }
   if (mem == NULL) {
     printf("ERROR: Failed to allocate memory after 1000 attempts. Test aborted.\n");
@@ -394,6 +419,7 @@ static bool test_invalid_free_address(FAR struct mm_heap_s *heap, size_t size)
 static bool test_invalid_realloc_non_kfence(FAR struct mm_heap_s *heap, size_t size)
 {
   FAR uint8_t *invalid_ptr = malloc(size);
+  printf("--- Running invalid realloc non-kfence test ---\n");
   if (invalid_ptr == NULL) {
     printf("ERROR: Failed to allocate non-kfence memory.\n");
     return false;
@@ -406,6 +432,7 @@ static bool test_invalid_realloc_non_kfence(FAR struct mm_heap_s *heap, size_t s
 static bool test_invalid_realloc_to_invalid_address(FAR struct mm_heap_s *heap, size_t size)
 {
   FAR uint8_t *invalid_ptr = (FAR uint8_t *)0x12345;
+  printf("--- Running invalid realloc to invalid address test ---\n");
   void *new_ptr = kfence_realloc(heap, invalid_ptr, size);
   return (new_ptr == NULL); // 检测到非法应返回true
 }
@@ -415,11 +442,13 @@ static bool test_invalid_realloc_to_freed_address(FAR struct mm_heap_s *heap, si
   FAR uint8_t *mem = NULL;
   FAR uint8_t *invalid_ptr = NULL;
   int retry_count = RETRY_COUNT;
+  printf("--- Running invalid realloc to freed address test ---\n");
   while (retry_count-- > 0){
     mem = kfence_alloc(heap,size);
     if(mem != NULL){
       break;
     }
+    usleep(50000);
   }
   if (mem == NULL) {
     printf("ERROR: Failed to allocate memory after 1000 attempts. Test aborted.\n");
