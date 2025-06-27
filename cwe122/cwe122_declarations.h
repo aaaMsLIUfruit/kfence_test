@@ -1,5 +1,5 @@
-#ifndef CWE122_TESTS_H
-#define CWE122_TESTS_H
+#ifndef CWE122_DECLARATIONS_H
+#define CWE122_DECLARATIONS_H
 
 int test_CWE122_loop_66(void);
 int test_CWE122_memcpy_66(void);
@@ -636,4 +636,4 @@ int testcwe122csrcwchartcpy12(void);
 int testcwe122csrcwchartcpy13(void);
 int testcwe122csrcwchartcpy15(void);
 
-#endif // CWE122_TESTS_H
+#endif // CWE122_DECLARATIONS_H
