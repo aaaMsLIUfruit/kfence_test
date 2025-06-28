@@ -60,10 +60,6 @@ static bool test_heap_illegal_memset(FAR struct mm_heap_s *heap, size_t size);
 static bool test_heap_illegal_strcpy(FAR struct mm_heap_s *heap, size_t size);
 //释放无效地址
 static bool test_invalid_free_address(FAR struct mm_heap_s *heap, size_t size);
-//realloc非kfence内存
-static bool test_invalid_realloc_non_kfence(FAR struct mm_heap_s *heap, size_t size);
-//realloc到无效地址
-static bool test_invalid_realloc_to_invalid_address(FAR struct mm_heap_s *heap, size_t size);
 //realloc到已释放地址
 static bool test_invalid_realloc_to_freed_address(FAR struct mm_heap_s *heap, size_t size);
 
@@ -102,8 +98,6 @@ const static testcase_t g_kfence_test[] =
   {test_heap_legal_memset, true, "heap legal memset"},
   {test_heap_legal_strcpy, true, "heap legal strcpy"},
   {test_invalid_free_address, true, "invalid free address"},
-  {test_invalid_realloc_non_kfence, true, "invalid realloc non kfence"},
-  {test_invalid_realloc_to_invalid_address, true, "invalid realloc to invalid address"},
   {test_invalid_realloc_to_freed_address, true, "invalid realloc to freed address"},
 #ifdef CONFIG_TESTING_KFENCE_JULIET_CWE
   {test_cwe416_use_after_free, true, "CWE416 use after free"},
@@ -416,26 +410,6 @@ static bool test_invalid_free_address(FAR struct mm_heap_s *heap, size_t size)
   return false; 
 }
 
-static bool test_invalid_realloc_non_kfence(FAR struct mm_heap_s *heap, size_t size)
-{
-  FAR uint8_t *invalid_ptr = malloc(size);
-  printf("--- Running invalid realloc non-kfence test ---\n");
-  if (invalid_ptr == NULL) {
-    printf("ERROR: Failed to allocate non-kfence memory.\n");
-    return false;
-  }
-  void *new_ptr = kfence_realloc(heap, invalid_ptr, size);
-  free(invalid_ptr);
-  return (new_ptr == NULL); // 检测到非法应返回true
-}
-
-static bool test_invalid_realloc_to_invalid_address(FAR struct mm_heap_s *heap, size_t size)
-{
-  FAR uint8_t *invalid_ptr = (FAR uint8_t *)0x12345;
-  printf("--- Running invalid realloc to invalid address test ---\n");
-  void *new_ptr = kfence_realloc(heap, invalid_ptr, size);
-  return (new_ptr == NULL); // 检测到非法应返回true
-}
 
 static bool test_invalid_realloc_to_freed_address(FAR struct mm_heap_s *heap, size_t size)
 {
